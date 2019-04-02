@@ -1,0 +1,60 @@
+{
+  "_pkglts": {
+    "auto_install": true, 
+    "install_front_end": "stdout", 
+    "use_prompts": false, 
+    "version": 12
+  }, 
+  "base": {
+    "authors": [
+      [
+        "moi", 
+        "moi@email.com"
+      ]
+    ], 
+    "namespace": null, 
+    "namespace_method": "pkg_util", 
+    "pkgname": "impulse", 
+    "url": null
+  }, 
+  "doc": {
+    "description": "belle petite description", 
+    "fmt": "rst", 
+    "keywords": []
+  }, 
+  "git": {}, 
+  "github": {
+    "owner": "{{ base.authors[0][0] }}", 
+    "project": "{{ base.pkgname }}", 
+    "url": "https://github.com/{{ github.owner }}/{{ github.project }}"
+  }, 
+  "license": {
+    "name": "cecill-c", 
+    "organization": "organization", 
+    "project": "{{ base.pkgname }}", 
+    "year": 2019
+  }, 
+  "pysetup": {
+    "intended_versions": [
+      "36"
+    ], 
+    "require": []
+  }, 
+  "readthedocs": {
+    "project": "{{ github.project }}"
+  }, 
+  "sphinx": {
+    "autodoc_dvlpt": true, 
+    "build_dir": "build/sphinx", 
+    "theme": "default"
+  }, 
+  "test": {
+    "suite_name": "pytest"
+  }, 
+  "travis": {}, 
+  "version": {
+    "major": 0, 
+    "minor": 0, 
+    "post": 1
+  }
+}
