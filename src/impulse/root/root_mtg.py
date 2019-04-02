@@ -91,7 +91,6 @@ class Simulate(object):
         for apex in apices:
             new_apices = apex_development(apex, dt=dt, dl=dl, sugar=sugar)
             self._apex.extend(new_apices)
-            print(self._apex)
 
 
 
