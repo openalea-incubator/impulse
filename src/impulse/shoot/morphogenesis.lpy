@@ -1,0 +1,56 @@
+from openalea.lpy import ParameterSet
+from math import sqrt, pi
+
+try:
+  demand_only = demand_only
+except NameError:
+  demand_only=False 
+  
+try:
+  carbon_seed_stock = carbon_seed_stock
+except NameError:
+  carbon_seed_stock= 1.5
+  
+growth_respiration=.2
+
+module apex: scale=1
+module internode: scale=1
+module leaf: scale=1
+module bud: scale=1
+
+ap = ParameterSet()
+ap.carbon = carbon_seed_stock
+
+Axiom: apex(ap)
+
+derivation length: 10
+production:
+apex(ap):
+  lp, ip = ParameterSet(), ParameterSet()
+  ip.lineic_mass = 1
+  lp.specific_mass = 1
+  ip.cabon_demand = ip.lineic_mass * 0.1
+  lp.carbon_demand = lp.specific_mass * 1
+  ip.length=0
+  lp.area=0
+  carbon_demand = (1 + growth_respiration) * (ip.cabon_demand + lp.carbon_demand)
+  if not demand_only:
+    satisfaction = min(1,float(ap.carbon) / carbon_demand)
+    ip.length = ip.lineic_mass * 0.1 * satisfaction
+    lp.area = lp.specific_mass * 1 * satisfaction
+    ap.carbon = ap.carbon - carbon_demand * satisfaction
+  produce internode(ip)[bud][leaf(lp)]apex(ap)
+
+interpretation:
+internode(ip) --> /(137.5)F(ip.length)
+leaf(lp):
+  radius = sqrt(lp.area / pi)
+  produce ;(2)^(45)f(radius)@o(radius)
+
+endlsystem
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	context.options.setSelection('Module declaration',1)
