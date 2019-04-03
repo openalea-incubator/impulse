@@ -97,8 +97,9 @@ def get_root_visitor():
     def root_visitor(g, v, turtle):
         angles = [90,45]+[30]*20
 
+        rad = g.property('radius')
         n = g.node(v)
-        radius = n.radius*10.
+        radius = rad.get(v,0.01)
         order = g.order(v)
         length = 1.
 
