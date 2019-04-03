@@ -9,41 +9,42 @@ except NameError:
 try:
   carbon_seed_stock = carbon_seed_stock
 except NameError:
-  carbon_seed_stock= 10
+  carbon_seed_stock= 1.5
   
 growth_respiration=.2
-internode_lineic_mass = 1
-leaf_specific_mass = 1
-potential_leaf_rate = 1
-potential_internode_rate = 0.1
 
-module collar(carbon)
-module apex(carbon, carbon_demand): scale=1
-module internode(carbon, carbon_demand, length, biomass): scale=1
-module leaf(carbon, carbon_demand, area, biomass): scale=1
+module apex: scale=1
+module internode: scale=1
+module leaf: scale=1
 module bud: scale=1
 
+ap = ParameterSet()
+ap.carbon = carbon_seed_stock
 
-Axiom: collar(0)apex(carbon_seed_stock,0)
+Axiom: apex(ap)
 
 derivation length: 10
 production:
-apex(carbon, carbon_demand):
-  new_carbon_demand = (1 + growth_respiration) * (internode_lineic_mass * potential_internode_rate + leaf_specific_mass * potential_leaf_rate)
-  if demand_only:
-    produce apex(carbon, new_carbon_demand)
-  else:
-    satisfaction = min(1,float(carbon) / new_carbon_demand)
-    ilength = potential_internode_rate * satisfaction
-    ibm = ilength * internode_lineic_mass
-    larea = potential_leaf_rate * satisfaction
-    lbm = leaf_specific_mass * larea
-    produce internode(0,0,ilength,ibm)[bud][leaf(0,0,larea,lbm)]apex(carbon - new_carbon_demand*satisfaction, new_carbon_demand)
+apex(ap):
+  lp, ip = ParameterSet(), ParameterSet()
+  ip.lineic_mass = 1
+  lp.specific_mass = 1
+  ip.cabon_demand = ip.lineic_mass * 0.1
+  lp.carbon_demand = lp.specific_mass * 1
+  ip.length=0
+  lp.area=0
+  carbon_demand = (1 + growth_respiration) * (ip.cabon_demand + lp.carbon_demand)
+  if not demand_only:
+    satisfaction = min(1,float(ap.carbon) / carbon_demand)
+    ip.length = ip.lineic_mass * 0.1 * satisfaction
+    lp.area = lp.specific_mass * 1 * satisfaction
+    ap.carbon = ap.carbon - carbon_demand * satisfaction
+  produce internode(ip)[bud][leaf(lp)]apex(ap)
 
 interpretation:
-internode(carbon, carbon_demand, length, biomass) --> /(137.5)F(length)
-leaf(carbon, carbon_demand, area, biomass):
-  radius = sqrt(area / pi)
+internode(ip) --> /(137.5)F(ip.length)
+leaf(lp):
+  radius = sqrt(lp.area / pi)
   produce ;(2)^(45)f(radius)@o(radius)
 
 endlsystem
