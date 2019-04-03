@@ -3,7 +3,7 @@
 ## (fonctionne dans environnement conda 'impulse' + xlrd)
 
 
-from openalea.plantgl.all import * 
+from openalea.plantgl.all import *
 from openalea.mtg.io import *
 from openalea.mtg.aml import *
 import random
@@ -17,7 +17,7 @@ import os
 
 
 
-#path_ = r'C:\devel\l-egume\legume'#r'C:\devel\grassland2017' 
+#path_ = r'C:\devel\l-egume\legume'#r'C:\devel\grassland2017'
 #sys.path.insert(0, path_)
 #import IOxls
 #import IOtable
@@ -61,7 +61,7 @@ def Which_idjour(TT, monTT, decalj):
   for i in range (decalj, len(TT)):
     if monTT>TT[i] and monTT<=TT[i+1]:
       id=i
-  
+
   return id
 
 def Offrj(TT,MSRacFine, idj):
@@ -94,8 +94,8 @@ d2=30.0  #/* Deuxième valeur de distance (plus grande) (mm) */
 NBbranchement=0
 
 class pte:
-  def __init__(self, id_pointe=0, age=0, 
-               diametre=0., Dmax_i=0, distPrimInit=0., longueur=0.01, 
+  def __init__(self, id_pointe=0, age=0,
+               diametre=0., Dmax_i=0, distPrimInit=0., longueur=0.01,
                dateDerniereCreation=0, posO=np.array([0.,0.,0.]),
                Tortue=np.array([[0.,0.,-1],[0.,1,0],[-1.,0.,0.]]),
                arretee=False, senile=False,axe_mort=False,segment=0, ordre=1):
@@ -115,7 +115,7 @@ class pte:
     self.ordre=ordre
 
 class primord:
-  def __init__(self,id_primord,age,diametre,Dmax_i, 
+  def __init__(self,id_primord,age,diametre,Dmax_i,
                Tortue=np.array([[0.,0.,-1],[0.,1,0],[-1.,0.,0.]]),
                avorte=False,id_pointe_axe=0,posO=np.array([0.,0.,0.]),
                ordre=1):
@@ -282,7 +282,7 @@ out = []
 
 ########################################
 # Log modilf GL
-# 
+#
 # - ajoute un argument Dmax_i aux objets pte et primord -> pour stocker valeur tirée inititale
 # - utilise Dmax_i comme valeur max de diametre de chaque racine (pas Dmax global)
 # - lecture des parametres dans un fichier externe excell:param_root.xls
@@ -293,7 +293,7 @@ out = []
 # - raclcule une offre en C journaliere pour les racines fines a partir d'un fichier d'entree -> la rapporte par degre jour
 # - passe P_SC en varaible ajustee entre 0 et 1 selon ratio offre demande
 # - ajout d'un Rseed pour controler les memes graines aleatoires
-# 
+#
 # ! unites affichees en commentaire sont pas bonnes!: longueur/diametre: tout en mm!!; pas de temps = degre.jour!
 
 # A faire: finir de reporter valeur de parametre (, g..)
@@ -312,37 +312,37 @@ out = []
 
 def Gravitropisme(vertex,segment,profondeur,elong,init):#age,ordre,Turtle):
   global AngleMaxInit,mtg
-  
+
   Tortue=mtg.property('pte').get(vertex).Tortue
   if (Order(vertex)==0 and segment==0 and init==1):# idem a (age==0 and ordre==0) signifie 1ere croissance de la racine
     alpha=random.normalvariate(P_angInitMoyVertPrim,P_angInitETVertPrim)
     while abs(alpha)>pi/2 and abs(alpha)<0:
       alpha=random.normalvariate(P_angInitMoyVertPrim,P_angInitETVertPrim)
-    beta=random.random()*2*pi 
-  
+    beta=random.random()*2*pi
+
   elif (segment==0 and init==1):# idem a age=0 signifie 1ere croissance d'une laterale
     alpha=P_angLat
     beta=random.random()*2*pi
-  
-  else:  
-    
+
+  else:
+
     #### vect direction pointe ####
     tortue=np.array([Tortue[:,0]])/np.linalg.norm(Tortue[:,0])
-    
+
     #### vect gravitropisme ####
     G=np.array([0,0,-P_intensiteTropisme*elong*mtg.property('pte').get(vertex).diametre])
-    
+
     #### vect meca  ###
-    
+
     #Dx=random.random()*2-1
     #sign=(floor(random.random()*2))*2-1
     #Dy=sign*sin(acos(Dx))
     #Meca=0.5*(Dx*np.array([Tortue[:,1]]/np.linalg.norm(Tortue[:,1]))+Dy*np.array([Tortue[:,2]]/np.linalg.norm(Tortue[:,2])))
-    
-    
+
+
     cont=float(Sol[Couche(profondeur)][2])
     if Sol[Couche(profondeur)][3]==1:##(oCMecaSol(sol,profondeur)==1)  /* Contrainte anisotrope verticale */
-      ## on est dans le cas ou le sol est composé de nombreux tunnel verticaux de vers de terre qui entraine une orientation assez verticale des racines 
+      ## on est dans le cas ou le sol est composé de nombreux tunnel verticaux de vers de terre qui entraine une orientation assez verticale des racines
       teta=15*pi/180
       ang_insertion=random.random()*2*teta-teta
       ang_radial=random.random()*2*pi
@@ -367,22 +367,22 @@ def Gravitropisme(vertex,segment,profondeur,elong,init):#age,ordre,Turtle):
       a=np.array([Tortue[0,:],Tortue[1,:],Tortue[2,:]])
       a[:,i]=newtortue
       A[i]=np.linalg.det(a)/float(np.linalg.det(Tortue))
-    
+
     A=A/np.linalg.norm(A)
     alpha=acos(A[0])
     beta=acos(-A[1]/sin(alpha))
-    
+
     if ((A[2] <0 and -sin(alpha)*sin(beta)>0) or (A[2] >0 and -sin(alpha)*sin(beta)<0)) :
       beta=-beta
-    
-    
-    
+
+
+
   RotLeft=np.array([[1,0,0],[0,cos(beta),-sin(beta)],[0,sin(beta),cos(beta)]])
   RotUp=np.array([[cos(alpha),sin(alpha),0],[-sin(alpha),cos(alpha),0],[0,0,1]])
   Rot=np.dot(Tortue,RotLeft)
   newTurtle=np.dot(Rot,RotUp)
   #newTurtle[:,0]=newTurtle[:,0]/np.linalg.norm(newTurtle[:,0])
-  
+
   pos=mtg.property('pte').get(vertex).posO
   newpos=pos+newTurtle[:,0]*elong
   return (newTurtle,newpos)
@@ -397,7 +397,7 @@ def CroissanceRacine(X,profondeur):
 def tireDiamPointeFille(diametre_pere):
   ##/* Tire le diamètre d'un méristème de ramification suivant celui du père
   ##   pour la ramification séquentielle */
-  
+
   moy=diametre_pere*P_propDiamRamif + (P_diamMin*(1.0-P_propDiamRamif))
   et=moy*P_coeffVarDiamRamif
   diamPFille=10.0  #// initialisation à une forte valeur
@@ -411,9 +411,9 @@ def tireDiamPointeFille(diametre_pere):
 
 
 def axialtree2mtg2(tree, scale, scene, parameters):
-  
+
   def scene_id(scene):
-    
+
     d = {}
     if scene:
       for sh in scene:
@@ -429,13 +429,13 @@ def axialtree2mtg2(tree, scale, scene, parameters):
       else:
         #print 'Be careful : no id ', axial_id
         pass
-  
-  
+
+
   geoms = scene_id(scene)
   mtg = MTG()
   if scene:
     mtg.add_property('geometry')
-  
+
   if parameters is None:
     parameters = {}
   for label in parameters:
@@ -445,14 +445,14 @@ def axialtree2mtg2(tree, scale, scene, parameters):
   vid = mtg.root
   current_vertex = vid
   branching_stack = [vid]
-  
-  max_scale = max(scale.itervalues())  
+
+  max_scale = max(scale.itervalues())
   pending_edge=''  #edge type for the next edge to be created
   indoor=0
   #pending_edge=[]  ####
-  #for i in range(max_scale):#### 
-  #  pending_edge.append(0)####  
-  
+  #for i in range(max_scale):####
+  #  pending_edge.append(0)####
+
   for aid, modul in enumerate(tree):
     label = modul.name
     if label == 'IN':
@@ -462,7 +462,7 @@ def axialtree2mtg2(tree, scale, scene, parameters):
         branching_stack.append(vid)
         pending_edge = '+'
       else:
-        indoor=0        
+        indoor=0
         branching_stack.append(vid)
         pending_edge.append('')
         continue
@@ -480,16 +480,16 @@ def axialtree2mtg2(tree, scale, scene, parameters):
     elif (label not in scale) and (label not in parameters):
       continue
     else:
-      
+
       _scale = scale[label]
       _params = parameters.get(label, [])
       params = {}
       params['label'] = label
-      
+
       for p in _params:
         if modul.hasParameter(p):
           params[p] = modul.getParameter(p)
-          
+
       if mtg.scale(vid) == mtg.scale(current_vertex) == _scale:
         if pending_edge == '+':
           edge_type = '+'
@@ -508,7 +508,7 @@ def axialtree2mtg2(tree, scale, scene, parameters):
         current_vertex = vid
         pending_edge = '<'
       elif mtg.scale(current_vertex) < _scale:
-        
+
         assert mtg.scale(current_vertex) == _scale - 1
         current_vertex = mtg.add_component(current_vertex, **params)
         if mtg.scale(vid) == _scale:
@@ -517,7 +517,7 @@ def axialtree2mtg2(tree, scale, scene, parameters):
           else:
             edge_type = '<'
           params['edge_type'] = edge_type
-          
+
           vid = mtg.add_child(vid,child=current_vertex,**params)
           assert vid == current_vertex
           pending_edge = ''
@@ -533,10 +533,10 @@ def axialtree2mtg2(tree, scale, scene, parameters):
   return mtg
 
 
-def Distance(v1,v2):  
+def Distance(v1,v2):
   dist=0
   chemin=Path(v1,v2)
-  
+
   chemin.append(v1)
   for x in chemin:
     if Class(x)=='s':
@@ -550,7 +550,7 @@ def Couche(profondeur):
     hor=NBHORMAX-1
   if hor<0:
     hor=0
-  
+
   return int(hor)
 
 timing = 0
@@ -558,13 +558,13 @@ timing = 0
 def Start():
   global timing,branch,chemin_fichier
   random.seed(Rseed)
-  
-  
+
+
   frameDisplay(True)
   Viewer.frameGL.setBgColor(255,255,255)
-  #Viewer.camera.setOrthographic() 
+  #Viewer.camera.setOrthographic()
   #Viewer.camera.lookAt((-50,0,-20),(0,0,-20))
-  
+
   timing = t.time()
 
 def End():
@@ -576,13 +576,13 @@ def End():
   f = file (resrootpath, 'w')
   IOtable.ecriture_csv(out, f)
   f.close()
-  
+
   #visu fin
   frameDisplay(True)
   #Viewer.frameGL.setSize(2000,5000)
   Viewer.frameGL.setBgColor(255,255,255)
-  #Viewer.camera.setOrthographic() 
-  
+  #Viewer.camera.setOrthographic()
+
   #Viewer.camera.lookAt#((7.5/100,-1666./100,-545/100),(384./100,0,-500/100))#((7.5,-1666.,-545),(384.,0,-500))#((-50,0,-20),(0,0,-20))
   outimagepath =  os.path.join(path_leg, ongletP+"_seed"+str(Rseed)+"_"+str(getIterationNb())+".png")
   Viewer.frameGL.saveImage(outimagepath)
@@ -596,36 +596,36 @@ def EndEach(lstring,lscene):
   #branch.writerow([TPS,NBbranchement])
   les_pointes=[[mtg.property('pte').get(x).id_pointe,x] for x in VtxList(3) if Class(x)=='p']
   les_primordiums=[x for x in VtxList(3) if Class(x)=='P']
-  
+
   Demande_biomasse=0
   for a in les_pointes:
     vtx=a[1]
     la_pte=mtg.property('pte').get(vtx)
     elong=CroissanceRacine(la_pte,1)
     Demande_biomasse+=P_RootMasseVolumique*(pi*(la_pte.diametre/2)*(la_pte.diametre/2)*elong)
-    
-  
+
+
   #print('Demande en biomasse :',Demande_biomasse)
   #print 'TPS :',TPS
-  
+
   #,' Temps pas :',t.time()-timing2
   #print 'temps pointe :', timing7 , '  temps primordium :',timing8,'  temps segments :',timing9,' temps endeach :',t.time()-tempete
   #print 'temps sysRac :',timing10
   dOffr = Offrj(TT,MSRacFine, Which_idjour(TT, TPS, decalj))
   #print cumlen, 'offre: ', dOffr
-  
+
   out.append([TPS,profmax,nbpte[2],Demande_biomasse,dOffr,P_SC,sum(cumlen)]+cumlen[1:])#ajouter offre_semande
   #remise a zero
   cumlen = [0,0,0,0,0,0,0,0]
   nbpte = [0,0,0,0,0,0,0,0]
-  P_SC = min(1., max(0. ,dOffr/Demande_biomasse)) #1 #si impose cste
-  
-  
+  P_SC = min(1., max(0. ,dOffr/Demande_biomasse)) if Demande_biomasse else 0. #1 #si impose cste
+
+
   #frameDisplay(True)
   #Viewer.display(lscene)
   #Viewer.frameGL.setBgColor(255,255,255)
   #Viewer.camera.setOrthographic()
-  
+
 
 
 Axiom: wRuler()SystemeRacinaire
@@ -636,21 +636,21 @@ production:
 SystemeRacinaire:
   global TPS,num_pointe,timing10
   nouvNbPrim=0
-  
+
   if TPS>1:
     nb_racine=len(VtxList(2))
   else:
-    nb_racine=0  
+    nb_racine=0
   #print(TPS%P_vitEmissionPrim,nb_racine,P_nbMaxPrim)
   if TPS%P_vitEmissionPrim==0 and nb_racine<P_nbMaxPrim:
     nouvNbPrim=1
-  
+
   #nouvNbPrim=P_vitEmissionPrim*TPS
   #if nouvNbPrim>=P_nbMaxPrim:
   # nouvNbPrim=P_nbMaxPrim
-  
-  
-  
+
+
+
   nouvPrim=nouvNbPrim-nb_racine
   #print('nouvemiss',nouvPrim)
   nproduce SystemeRacinaire
@@ -666,35 +666,35 @@ SystemeRacinaire:
 pointe(X):
   global mtg,num_primordium,timing7,les_pointes,profmax,nbpte, P_SC
   X.age=X.age+dt
-  
+
   for x in les_pointes:
     if x[0]==X.id_pointe:
       vertex_pointe=x[1]
       break
-  
+
   #vertex_axe=Axis(vertex_pointe)
-  
+
   #if X.id_pointe==1:#racin seminale
   #  print 'longueur: ', X.longueur, X.age, X.diametre, X.posO, CroissanceRacine(X,1)
-  
+
   if X.arretee==False and X.senile==False and X.diametre>P_diamMin and X.ordre<=ordreMax:
-    
+
     profondeur=X.posO[2]
     elongation=CroissanceRacine(X,profondeur) * P_SC
     X.longueur=X.longueur+elongation
-    
+
     distInterRamif=P_distRamif * float(Sol[Couche(profondeur)][1])
-    
+
     init=1
-    
-    
-    
+
+
+
     if X.id_pointe==1:#racin seminale
       #print 'longueur: ', X.longueur, X.age, X.diametre, X.posO, CroissanceRacine(X,1), elongation
       if X.posO[2]<profmax:#mise a jour profondeur max
           profmax = X.posO[2]
-    
-    
+
+
     while X.longueur > distInterRamif:
       (X.Tortue,X.posO)=Gravitropisme(vertex_pointe,X.segment,profondeur,longSegNorm,init)
       if X.segment==0:
@@ -707,25 +707,25 @@ pointe(X):
       nproduce Primordium(param)
       X.longueur=X.longueur-distInterRamif
       init=0
-  
+
   #if X.senile==False and TPS>10 and X.arretee==False:
-  #  
+  #
   #  tirage=random.random()
   #  probaArret=P_probaMaxArret*(1-exp(-P_probaEffetDiam*X.age/X.diametre))
   #  if tirage < probaArret:
   #    X.arretee=True      ### La croissance est arretée
-  #  
-  
-  
+  #
+
+
   #if X.senile==False and TPS>10 and X.age > (P_penteDureeVieDiamTMD*X.diametre*P_TMD):
   #  X.senile=True    ### la pointe devient sénile
-  
+
   if X.arretee==False and TPS>10 and X.age > (X.diametre*X.diametre*P_GDs):
     X.arretee=True    ### la pointe arretee
-  
+
   ordre = int(X.ordre)
   nbpte[ordre] += 1
-  
+
   #if X.senile==True:  ## on teste si tout l'axe est mort
   #  base_axe=vertex_axe[0]
   #  les_pointes_axe=Extremities(base_axe)
@@ -733,27 +733,27 @@ pointe(X):
   #  for x in les_pointes_axes:
   #    if mtg.property('pte').get(x).senile==False:
   #      X.axe_mort=False
-  
-  
+
+
   nproduce pointe(X)
-  
+
   #X.diametre=min((1+(P_Vmax-P_Vmin)*P_SC+P_Vmin)*X.diametre,P_Dmax)
   X.diametre=min((1+(P_Vmax-P_Vmin)*P_SC+P_Vmin)*X.diametre,X.Dmax_i)
   if X.diametre<P_diamMin:
     X.arretee=True
-  
+
   produce
 
 
 
 Primordium(X):
   global num_pointe,timing8,les_pointes,NBbranchement
-  
+
   #for x in les_pointes:
   #  if mtg.property('pte').get(x).id_pointe==X.id_pointe_axe:
   #    vertex_pointe=x
   #    break
-  
+
   #if mtg.property('pte').get(vertex_pointe).axe_mort:
   #  produce
   #if X.avorte==True:
@@ -775,12 +775,12 @@ Primordium(X):
 
 #segment(X):
 #  global timing9,les_pointes
-#  
+#
 #  for x in les_pointes:
 #    if mtg.property('pte').get(x).id_pointe==X.id_pointe_axe:
 #      vertex_pointe=x
 #      break
-# 
+#
 #  if mtg.property('pte').get(vertex_pointe).axe_mort:
 #    nproduce
 #  else:
