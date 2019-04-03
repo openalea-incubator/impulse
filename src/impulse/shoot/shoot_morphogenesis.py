@@ -14,7 +14,7 @@ def shoot_init(carbon_seed_stock=0.1):
 
 def shoot_grow(g, demand_only=True):
     lsys = Lsystem(str(os.path.join(lsysdir, 'morphogenesis.lpy')), {'demand_only': demand_only})
-    #lsys.axiom = mtg2lpy(g, lsys, AxialTree())
+    lsys.axiom = mtg2lpy(g, lsys, AxialTree())
     axt = lsys.iterate()
     scene = lsys.sceneInterpretation(axt)
     return lpy2mtg(axt, lsys, scene)
