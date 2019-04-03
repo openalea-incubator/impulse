@@ -22,7 +22,7 @@ import os
 #import IOxls
 #import IOtable
 
-path_leg = r'C:\devel\archisimple_lpy\GL sur pc serge'#r'C:\devel\racine vincent'
+path_leg = r'.'#r'C:\devel\racine vincent'
 sys.path.insert(0, path_leg)
 import IOxls
 import IOtable
@@ -32,7 +32,8 @@ path_plante = os.path.join(path_leg,'param_root.xls')
 ongletP = 'sevanskij'#'leo'#'canto'#'formica'#'timbale'#'giga'#'canto'#'kayanne'#
 ParamP = IOxls.read_plant_param(path_plante, ongletP)
 
-path_offre=os.path.join(path_leg,"offremleg15","moyenne"+".csv")#ongletP+".csv")#"moyenne"-> pour allocation moyenne independante des especes
+#"moyenne"-> pour allocation moyenne independante des especes
+path_offre=os.path.join(path_leg,"moyenne"+".csv")#ongletP+".csv")
 fichier_offre=open(path_offre,"rb")
 taboffre =  IOtable.conv_dataframe(IOtable.t_list( IOtable.table_csv_str(fichier_offre)))
 fichier_offre.close()
@@ -93,7 +94,11 @@ d2=30.0  #/* Deuxième valeur de distance (plus grande) (mm) */
 NBbranchement=0
 
 class pte:
-  def __init__(self, id_pointe=0, age=0, diametre=0., Dmax_i=0, distPrimInit=0., longueur=0.01, dateDerniereCreation=0, posO=np.array([0.,0.,0.]),Tortue=np.array([[0.,0.,-1],[0.,1,0],[-1.,0.,0.]]), arretee=False, senile=False,axe_mort=False,segment=0, ordre=1):
+  def __init__(self, id_pointe=0, age=0, 
+               diametre=0., Dmax_i=0, distPrimInit=0., longueur=0.01, 
+               dateDerniereCreation=0, posO=np.array([0.,0.,0.]),
+               Tortue=np.array([[0.,0.,-1],[0.,1,0],[-1.,0.,0.]]),
+               arretee=False, senile=False,axe_mort=False,segment=0, ordre=1):
     self.id_pointe=id_pointe
     self.age=age
     self.diametre=diametre
@@ -110,7 +115,10 @@ class pte:
     self.ordre=ordre
 
 class primord:
-  def __init__(self,id_primord,age,diametre,Dmax_i, Tortue=np.array([[0.,0.,-1],[0.,1,0],[-1.,0.,0.]]),avorte=False,id_pointe_axe=0,posO=np.array([0.,0.,0.]),ordre=1):
+  def __init__(self,id_primord,age,diametre,Dmax_i, 
+               Tortue=np.array([[0.,0.,-1],[0.,1,0],[-1.,0.,0.]]),
+               avorte=False,id_pointe_axe=0,posO=np.array([0.,0.,0.]),
+               ordre=1):
     self.id_primord=id_primord
     self.age=age
     self.diametre=diametre
@@ -805,6 +813,9 @@ __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
 	import openalea.plantgl.all as pgl
+	Color_4 = pgl.Material("Color_4" , ambient = (60,60,15) , diffuse = 1.78333 , )
+	Color_4.name = "Color_4"
+	context.turtle.setMaterial(4,Color_4)
 	Color_7 = pgl.Material("Color_7" , ambient = (23,23,23) , diffuse = 1.21739 , specular = (13,13,13) , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)

@@ -20,6 +20,7 @@ g = mtg.MTG()
 root =  g.add_component(g.root, label ='systracinaire')
 nid = g.node(root)
 nid.C1 = init1
+nid.radius = 0.02
 
 #rajout de l'apex connecte au root
 apex = g.add_child(root, label='A',edge_type='<')
