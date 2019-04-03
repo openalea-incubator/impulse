@@ -49,8 +49,9 @@ class AniResistanceGrid(Grid3D):
         # 300 mm uniform 0 - 0.2
         # en dessous uniform V : 0. - 0.2 ; H : 0.3 - 0.5
         print 'init'
-        self.vvalues = np.random.uniform(0,0.2,self.size())
-        self.hvalues = np.random.uniform(0.3,0.5,self.size())
+        self.vvalues = np.ones(self.size())* 0.2 #np.random.uniform(0,0.2,self.size())
+        self.hvalues = np.ones(0.5,self.size())
+        # self.hvalues = np.random.uniform(0.3,0.5,self.size())
         import itertools as it
         deb = [self.origin[i]+self.voxelsize[i]/2. for i in xrange(3)]
         deb[2] = -self.layer+self.voxelsize[i]/2.
