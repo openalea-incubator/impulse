@@ -1,7 +1,7 @@
 from random import gauss, uniform, seed
 from openalea.plantgl.all import *
 import numpy as np
-from math import degrees, exp, pi
+from math import degrees, exp, pi, ceil, log
 import sys, os
 
 soilpath = os.path.join(os.getcwd(),os.path.pardir,'soil')
@@ -9,8 +9,8 @@ if not soilpath in sys.path:
   sys.path += [soilpath]
 import soil as sl ; reload(sl)
 
-module Segment(diameter)
-module Pointe (age, diameter, length) # coord direction
+module Segment(diameter, length)
+module Pointe (age, diameter, length, rolling) # coord direction
 
 seed(SEED)
 np.random.seed(SEED)
@@ -93,22 +93,17 @@ def tropism(diameter):
 def reorientation_meca(diameter):
   return ReorientationMecaMax * (0.2 + 0.8*(DMax - diameter)/(DMax - DMin))
 
-print -Duree*1.1*Elong
-soil = sl.Soil3D(origin=(-500,-500,-Duree*1.1*Elong), dxyz = (50,50,50), size=(20,20,15))
-soil.add_property('vresistance',0.1)
-soil.add_property('hresistance',0.1)
+res = 50
+maxdepth = Duree*Elong*DMax*1.2
+zsize = int(ceil(maxdepth/res))+1
+radius = 400
+rsize = int(ceil(radius*2./res))
 
-import itertools as it
-deb = [soil.origin[i]+soil.dxyz[i]/2. for i in xrange(3)]
-deb[2] = -300+soil.dxyz[i]/2.
-end = soil.upper()
-end[2] = 0
+soil = sl.Soil3D(origin=(-radius,-radius,-maxdepth), dxyz = (res,res,res), size=(rsize,rsize,zsize))
+soil.add_property('vresistance',0.0)
+soil.add_property('hresistance',0.5)
+soil.setLayerValue('hresistance',2, range(soil.iindex(2,-100),soil.iindex(2,1)+1), 0.0)
 
-for vx,vy,vz in it.product(*[np.arange(deb[i],end[i],soil.dxyz[i]) for i in xrange(3)]):
-    soil.setValueAt('hresistance',[vx,vy,vz],0.2)
-
-#import grid ; reload(grid)
-#grid = grid.AniResistanceGrid(voxelsize = (50,50,50), origin=(-500,-500,-Duree*1.1*Elong),upper=(500,500,0) )
 
 def apply_resistance(p, h, l):
       hresistance = soil.getValueAt('hresistance',p)
@@ -116,21 +111,25 @@ def apply_resistance(p, h, l):
       ev = h[2]
       eh = norm(h[0],h[1])
       ndir = (l*(1-hresistance)*eh,l*(1-vresistance)*ev)
+      lndir = (l*eh,l*ev)
       ndirL = norm(ndir)
-      ndirA = degrees(angle(ndir,(l*eh,l*ev)))
+      ndirA = degrees(angle(ndir,lndir))
+      #print h, ev, eh, ndir, lndir, ndirA
       return ndirL, ndirA
 
 module Grid, Supply
 
-Axiom: Grid Supply @Tp(0,0,-1) @Ts(TropismElasticity) _(DMax) +(180) Pointe(0, DMax, MinPointeLength) ?P ?H
+Axiom:  Supply [@Tp(0,0,-1) @Ts(TropismElasticity) _(DMax) &(170) Pointe(0, DMax, MinPointeLength, 0) ?P ?H] Grid
 
 derivation length: Duree/dt
 production:
 
-Pointe(age, d, l) ?P(p) ?H(h):
+Pointe(age, d, l, r) ?P(p) ?H(h):
   age += dt
   ndirA = 0
-  global UptakenN
+  ndl = 0
+  ipos = p - h * l
+  global UptakenN, soil
   UptakenN += DIR*pi*d*UptakeCoef
   if age < 0:
     if CARBON_MODULATION:
@@ -139,44 +138,54 @@ Pointe(age, d, l) ?P(p) ?H(h):
   if 0 < age < duree_croissance(d) :
     ndl = dl(d, dt)
     l += ndl
-    if GRID:
+    if GRID and GRIDRESISTANCE:
       nl, ndirA = apply_resistance(p, h, l)
-    npos = p+h*l
+    npos = p+h*ndl
     if npos[2] > 0:
-      pass
+      ndirA = 90-degrees(angle(h,(0,0,1)))
     if abs(ndirA) > 0:
       nproduce  &(ndirA)
+    ipos += h*DIR/2
     while l > DIR + MinPointeLength:
       nproduce ?P Segment(d, DIR) ?P
+      if GRID:
+        soil.incValueAt('rootdensity',ipos,DIR)
+        ipos += h*DIR
       if STEREOTYPED:
-        nproduce /(180)
+        r += 180
       else:
-        nproduce /(uniform(0,360))^(uniform(0,reorientation_meca(d)))
+        r += uniform(0,360)
+        reorient = reorientation_meca(d)
+        nproduce &(uniform(-reorient,reorient))
       if d >= MinRamifDiameter:
         diam =  diameter_daughter(d)
         if DMin <= diam :
-          nproduce [+(InsertionAngle) @Ts(tropism(d))_(diam) @v
-          nproduce Pointe(-DurDevPrim,diam, 0)  ?P ?H
+          nproduce [/(r) +(InsertionAngle) @Ts(tropism(d))_(diam) @v
+          nproduce Pointe(-DurDevPrim,diam, 0, 0)  ?P ?H
           nproduce ]
       l -= DIR
-  
-  produce Pointe(age, d, l) ?P ?H
+  if GRID:
+    soil.incValueAt('rootdensity',p+h*ndl, l)
+  produce Pointe(age, d, l, r % 360) ?P ?H
 
 ?P(p0) Segment(d,l) ?P(p)  :
-  global UptakenN
+  global UptakenN, soil
   surface = pi*d*UptakeCoef
   UptakenN += DIR*surface
-  soil.setValueAt('rootdensity',(p0+p)/2,surface)
+  if GRID:
+    soil.incValueAt('rootdensity',(p0+p)/2, norm(p-p0))
+  produce ?P Segment(d,l) ?P
   
 
 interpretation:
 
 Segment(d,l) -->  F(l, d)
-Pointe(a,d,l) --> ,(3) F(l,d) @O()
+Pointe(a,d,l,r) --> ,(3) F(l,d) @O()
 
 Grid :
   if GRID and GRIDVIEW: 
-    sc = soil.pgl_representation(property_name='hresistance')
+    sc = soil.pgl_representation(property_name='rootdensity', sizeratio = 1, transparency = 0.5,  minvalue = 0.01, maxvalue = 7, cmview=True, scalefunc = lambda x : log(x +1) )
+    #sc = soil.pgl_representation(property_name='hresistance', sizeratio = 1, transparency = 0.5,  minvalue = 0.01, maxvalue = 1, cmview=True )
     produce @g(sc)
 
 Supply :
@@ -190,7 +199,7 @@ endlsystem
 __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
-	scalars = [('GRID', 'Bool', True), ('GRIDVIEW', 'Bool', True), ('SEED', 'Integer', 1, 0, 100), ('CARBON_MODULATION', 'Bool', False), ('STEREOTYPED', 'Bool', True), ('SUPPLY_PROFILE', 'Integer', 1, 0, 4)]
+	scalars = [('GRID', 'Bool', True), ('GRIDRESISTANCE', 'Bool', False), ('GRIDVIEW', 'Bool', True), ('SEED', 'Integer', 1, 0, 100), ('CARBON_MODULATION', 'Bool', False), ('STEREOTYPED', 'Bool', False), ('SUPPLY_PROFILE', 'Integer', 1, 0, 4)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
