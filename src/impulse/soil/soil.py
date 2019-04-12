@@ -120,12 +120,24 @@ class Soil3D(object):
     def setSliceValue(self, property_name, xslice = slice(None), yslice = slice(None), zslice = slice(None), value = None):
         self.property(property_name)[xslice,yslice,zslice] = value
 
+    #def set_3ds_properties(self, Smodel_obj, ls_properties):
+    #    """ set a list of properties for 3ds soil model from  Smodel_obj"""
+    #    for p in ls_properties:
+    #        vals = getattr(Smodel_obj, p)#comme Smodel_obj.property_name, mais acces par nom
+    #        reshaped_vals = np.reshape(vals, self.size)#reshape x,y,z
+    #        self.add_property(p, reshaped_vals)
+
     def set_3ds_properties(self, Smodel_obj, ls_properties):
         """ set a list of properties for 3ds soil model from  Smodel_obj"""
         for p in ls_properties:
-            vals = getattr(Smodel_obj, p)#comme Smodel_obj.property_name, mais acces par nom
-            reshaped_vals = np.reshape(vals, self.size)#reshape x,y,z
+            vals = getattr(Smodel_obj, p)  # comme Smodel_obj.property_name, mais acces par nom
+            # reshaped_vals = np.reshape(vals, self.size)  # reshape x,y,z
+            reshaped_vals = np.zeros(self.size)
+            for z in range(self.size[2]):
+                reshaped_vals[:, :, z] = vals[z, :, :]
+
             self.add_property(p, reshaped_vals)
+
 
     def __getattr__(self, name):
         try:
