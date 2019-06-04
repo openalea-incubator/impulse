@@ -5,31 +5,35 @@ from math import floor
 default_properties = ['Qwater', 'Volume_vox', 'Qnorg' , 'Qcorg', 'QNO3', 'QNH4', 'DA', 'Resist' ]
 
 class Soil3D(object):
-    def __init__(self, origin = (0,0,0), size = (100,100,100), dxyz = (1,1,1),  properties = {}, toric = (True,True,False)):
-        """ m: dictionnary of 3D numpy grids of the different quantitative properties
-        (filled with ones)
+    def __init__(self, origin = (0,0,0), size = (100,100,100), dxyz = (1,1,1), properties = {}, toricities = (True,True,False)):
+        """ 
             origin: position of the first voxel (0,0,0) 
             size: number of voxels along z:x:y axes
             dxyz: voxel dimensions along x,y,z
-            toric: define for each dimension if the grid is toric
+            toricities: define for each dimension if the grid is toric
+            properties: dictionnary of 3D numpy grids of the different quantitative properties
+        (filled with ones)
+
+            By default, dimensions are expected to be expressed in cm.
             """
 
         self.maxdimension = 3
-        self.toric = toric
+        self.toricities = toricities
         self.origin = np.array(origin)
         self.size = np.array(size)
         self.dxyz = np.array(dxyz)
+        self.ijk = np.array([1,1,-1])
         #self.gridindexing = pgl.Grid3Indexing( dxyz, origin, self.upper())
         self.m = {}
         for p, v in properties:
             self.add_property(p,v)
 
     def iindex(self, i, coord):
-        val = int(floor((coord - self.origin[i]) / self.dxyz[i])) 
-        if self.toric[i] : val = val % self.size[i]
+        val = int(floor((coord - self.origin[i]) / (self.ijk[i] * self.dxyz[i])))
+        if self.toricities[i] : val = val % self.size[i]
         return val
 
-    def indexFromPoint(self, pos):
+    def indexFromPoint(self, pos, unit='m'):
         res = [self.iindex(i, posi) for i, posi in enumerate(pos)]
         return tuple(res)
 
@@ -37,10 +41,13 @@ class Soil3D(object):
     #    return self.gridindexing.indexFromPoint(pos)
 
     def upper(self):
-        return [self.origin[i] + self.size[i]*self.dxyz[i] for i in range(self.maxdimension)]
+        return [self.origin[i] + self.size[i]*self.dxyz[i]*self.ijk[i] if self.ijk[i] > 0 else self.origin[i] for i in range(self.maxdimension)]
+
+    def lower(self):
+        return [self.origin[i] + self.size[i]*self.dxyz[i]*self.ijk[i] if self.ijk[i] < 0 else self.origin[i] for i in range(self.maxdimension)]
 
     def getVoxelCenter(self, index):
-        return self.origin + self.dxyz*index + self.dxyz*0.5
+        return self.origin + self.ijk * (self.dxyz*index + self.dxyz*0.5)
 
     def properties(self):
         return self.m
@@ -58,7 +65,7 @@ class Soil3D(object):
     def property_names(self):
         return self.m.keys()
 
-    def pgl_representation(self, cm='jet', property_name='QWater', sizeratio = 0.1, transparency = 0, minvalue = None, maxvalue = None, scalefunc = None, cmview = False):
+    def pgl_representation(self, cm='jet', property_name='QWater', sizeratio = 0.1, transparency = 0, minvalue = None, maxvalue = None, scalefunc = None, cmview = False, scaling = 1):
         """ return Plantgl scene """
         if property_name not in self.property_names(): return
 
@@ -78,8 +85,8 @@ class Soil3D(object):
             if minvalue <= value <= maxvalue:
                 mat = colormap(value)
                 mat.transparency = transparency
-                sc += pgl.Shape(pgl.Translated(self.getVoxelCenter(idx),
-                                               pgl.Box(vsize)),
+                sc += pgl.Shape(pgl.Translated(self.getVoxelCenter(idx)*scaling,
+                                               pgl.Box(vsize*scaling)),
                                 mat)
             it.iternext()
 
@@ -95,6 +102,7 @@ class Soil3D(object):
         self.property(property_name)[self.indexFromPoint(pos)] = value
 
     def incValueAt(self, property_name, pos, value):
+        print pos, self.indexFromPoint(pos)
         self.property(property_name)[self.indexFromPoint(pos)] += value
 
     def setLayerValue(self, property_name, layerdimension, layervalue, value):
