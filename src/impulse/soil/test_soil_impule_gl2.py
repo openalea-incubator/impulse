@@ -18,7 +18,7 @@ import impulse.soil.soil as soil_interface
 ## (pas d'entree d'eau + pas d'evaporation du sol avec epsi=1.)
 ########################
 
-nb_jours = 100
+nb_jours = 20
 Rain = [0.]*nb_jours
 Irrig = [0.]*nb_jours
 epsi = [0.9999]*nb_jours #efficience d'interceptio plante ; 1: voit que effet transpi
@@ -35,10 +35,32 @@ stateEV = [0.,0.,0.] #pour le calcul de l'evaporation du sol (memoire du cumul e
 size_ = S.size[1:]+S.size[0:1] #passe z,x,y en xyz
 dxyz_ = [S.dxyz[0][0], S.dxyz[1][0], S.dxyz[2][0]]
 origin = S.origin
+# Par default, les dimensions sont exprimes en m. Il faut les convertir en cm pour le Soil3D
+dxyz_ = [v*100 for v in dxyz_]
+origin = [v*100 for v in origin]
 
 
 mysoil = soil_interface.Soil3D(origin, size_, dxyz_)
+print origin, size_, dxyz_
 
+from impulse.root.archisimple import ArchiSimpleModel
+
+rootmodel = ArchiSimpleModel(soil=mysoil)
+rootmodel.model.PLOT_PROPERTY = 'ftsw_t'
+
+def soil3D2s3DSprop(struct1, struct2, propname):
+    propvalue = np.zeros(struct2.size)
+    for i in range(struct2.size[0]): 
+        propvalue[i,:,:] = struct1.m[propname][:,:,i]
+    return propvalue
+    ls_roots = [propvalue]
+
+def soil3D2s3DSprop(struct1, struct2, propname):
+    return np.transpose(struct1.m[propname], (2,1,0) )
+
+
+def s3DS2soil3D(struct1, struct2, propname):
+    return struct2.add_property(propname, np.transpose(getattr(struct1,propname), (2,1,0) ))
 
 ## Boucle jounaliere
 for j in range(nb_jours):
@@ -62,26 +84,22 @@ for j in range(nb_jours):
     mysoil.set_3ds_properties(S, properties_3ds)
     #mysoil.m
 
-    # mise a jour d'une propriete root_density dans mysoil
-    mysoil.add_property('root_density', default_value = 0.)
-    mysoil.m['root_density'][:,:,0] = 50.
-    mysoil.m['root_density'][:,:,1] = 10.
-
+    # Simulation of the root system and update of soil property 'root_density'
+    rootmodel.simulate(1)
 
     #lecure de root_density dans l'interface sol et construction du ls_root pour 3ds
     #resh = np.reshape(mysoil.m['root_density'], S.size)#reshape z,x,y pour 3ds
     #reshape remet pas les racines dans l'ordre que je veux!!!??
-    root = np.zeros(S.size)
-    for i in range(S.size[0]): root[i,:,:] = mysoil.m['root_density'][:,:,i]
-    ls_roots = [root]#liste des systemes racinaires des differentes plantes
-
+    ls_roots = [soil3D2s3DSprop(mysoil, S, 'root_density')]
 
     #step de water balance
     ls_transp, evapo_tot, ls_drainage, stateEV,  ls_m_transpi, m_evap, ls_ftsw = S.stepWBmc(Et0[j], ls_roots, [epsi[j]], Rain[j], Irrig[j], stateEV)
 
+    s3DS2soil3D(S, mysoil, 'ftsw_t')
+
     print j, ls_ftsw[0] #print de la fraction d'eau disponible percue par le systeme racinaire
 
-
+rootmodel.plot()
 
 
 

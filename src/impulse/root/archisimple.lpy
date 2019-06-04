@@ -15,6 +15,11 @@ module Pointe (age, diameter, length, rolling) # coord direction
 seed(SEED)
 np.random.seed(SEED)
 
+
+def tocm(mmvalue):
+  """ Convert dimension of the model expressed in mm into cm for grid communication """
+  return mmvalue/10.
+
 # A implementer: Elagage, Croissance Radiale.
 
 Duree = 30
@@ -46,6 +51,7 @@ UptakeCoef = 0.1
 UptakenN = 0
 
 PRIM_CARBON_RESPONSE.clamped = False
+PLOT_PROPERTY = 'root_density'
 
 if SUPPLY_PROFILE > 0:
   SUPPLY = globals()['SUPPLY'+str(SUPPLY_PROFILE)]
@@ -60,7 +66,7 @@ def StartEach():
   global normtime, UptakeCoef, soil
   normtime = getIterationNb()*dt/float(Duree)
   UptakeCoef = 0
-  soil.add_property('rootdensity',0)
+  soil.add_property('root_density',0)
 
 def dl(diameter, dt):
   if CARBON_MODULATION:
@@ -99,10 +105,11 @@ zsize = int(ceil(maxdepth/res))+1
 radius = 400
 rsize = int(ceil(radius*2./res))
 
-soil = sl.Soil3D(origin=(-radius,-radius,-maxdepth), dxyz = (res,res,res), size=(rsize,rsize,zsize))
-soil.add_property('vresistance',0.0)
-soil.add_property('hresistance',0.5)
-soil.setLayerValue('hresistance',2, range(soil.iindex(2,-100),soil.iindex(2,1)+1), 0.0)
+if not 'soil' in globals():
+  soil = sl.Soil3D(origin=(-radius,-radius,10), dxyz = (res,res,res), size=(rsize,rsize,zsize))
+  soil.add_property('vresistance',0.0)
+  soil.add_property('hresistance',0.5)
+  soil.setLayerValue('hresistance',2, range(soil.iindex(2,tocm(-100)),soil.iindex(2,tocm(1))+1), 0.0)
 
 
 def apply_resistance(p, h, l):
@@ -119,7 +126,7 @@ def apply_resistance(p, h, l):
 
 module Grid, Supply
 
-Axiom:  Supply [@Tp(0,0,-1) @Ts(TropismElasticity) _(DMax) &(170) Pointe(0, DMax, MinPointeLength, 0) ?P ?H] Grid
+Axiom:  Supply [@Tp(0,0,-1) @Ts(TropismElasticity) _(DMax) &(170)  @M(0,0,-0.5) Pointe(0, DMax, MinPointeLength, 0) ?P ?H] Grid
 
 derivation length: Duree/dt
 production:
@@ -149,7 +156,7 @@ Pointe(age, d, l, r) ?P(p) ?H(h):
     while l > DIR + MinPointeLength:
       nproduce ?P Segment(d, DIR) ?P
       if GRID:
-        soil.incValueAt('rootdensity',ipos,DIR)
+        soil.incValueAt('root_density',tocm(ipos),DIR)
         ipos += h*DIR
       if STEREOTYPED:
         r += 180
@@ -165,7 +172,7 @@ Pointe(age, d, l, r) ?P(p) ?H(h):
           nproduce ]
       l -= DIR
   if GRID:
-    soil.incValueAt('rootdensity',p+h*ndl, l)
+    soil.incValueAt('root_density',tocm(p+h*ndl), l)
   produce Pointe(age, d, l, r % 360) ?P ?H
 
 ?P(p0) Segment(d,l) ?P(p)  :
@@ -173,7 +180,7 @@ Pointe(age, d, l, r) ?P(p) ?H(h):
   surface = pi*d*UptakeCoef
   UptakenN += DIR*surface
   if GRID:
-    soil.incValueAt('rootdensity',(p0+p)/2, norm(p-p0))
+    soil.incValueAt('root_density',tocm((p0+p)/2), norm(p-p0))
   produce ?P Segment(d,l) ?P
   
 
@@ -184,8 +191,10 @@ Pointe(a,d,l,r) --> ,(3) F(l,d) @O()
 
 Grid :
   if GRID and GRIDVIEW: 
-    sc = soil.pgl_representation(property_name='rootdensity', sizeratio = 1, transparency = 0.5,  minvalue = 0.01, maxvalue = 7, cmview=True, scalefunc = lambda x : log(x +1) )
-    #sc = soil.pgl_representation(property_name='hresistance', sizeratio = 1, transparency = 0.5,  minvalue = 0.01, maxvalue = 1, cmview=True )
+    if PLOT_PROPERTY == 'root_density':
+      sc = soil.pgl_representation(property_name=PLOT_PROPERTY, sizeratio = 1, transparency = 0.5,  minvalue = 0.01, maxvalue = 7, cmview=True, scalefunc = lambda x : log(x +1), scaling = 10 )
+    else:
+      sc = soil.pgl_representation(property_name=PLOT_PROPERTY, sizeratio = 1, transparency = 0.5,  cmview=True, scalefunc = lambda x : 1-x, scaling = 10 )
     produce @g(sc)
 
 Supply :
